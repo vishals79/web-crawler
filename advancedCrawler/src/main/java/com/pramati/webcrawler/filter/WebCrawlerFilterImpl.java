@@ -14,7 +14,7 @@ public class WebCrawlerFilterImpl implements Filter {
 		Matcher matcher = null;
 		if (doc != null) {
 			content = doc.text();
-			pattern = Pattern.compile("From");
+			pattern = Pattern.compile("[fF]rom");
 			matcher = pattern.matcher(content);
 			if (!matcher.find()) {
 				return false;
@@ -63,12 +63,4 @@ public class WebCrawlerFilterImpl implements Filter {
 		}
 		return false;
 	}
-
-	/*
-	 * public boolean isEmail(Element element) { String href = null; if(element
-	 * != null){ href = element.attr("href"); if(isNotEmpty(href)){
-	 * if(!href.contains("@")){ return false; } if(href.subSequence(0,
-	 * href.indexOf('@')).length() == 0){ return false; } if(href.indexOf('@')
-	 * == href.length()-1){ return false; } } } return true; }
-	 */
 }

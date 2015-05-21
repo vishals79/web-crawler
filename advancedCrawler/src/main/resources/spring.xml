@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+<bean id="webCrawler" class="com.pramati.webcrawler.service.WebCrawlerService">
+	<constructor-arg ref="filter"></constructor-arg>
+	<constructor-arg ref="parser"></constructor-arg>
+</bean>
+
+<bean id="filter" class="com.pramati.webcrawler.filter.WebCrawlerFilterImpl">
+</bean>
+
+<bean id="parser" class="com.pramati.webcrawler.parser.WebCrawlerParserImpl">
+</bean>
+
+</beans>

@@ -5,6 +5,6 @@ import org.jsoup.nodes.Element;
 
 public interface Filter {
 	public boolean isEmail(Document doc);
-	
-	public boolean matchForYear(Document doc,String year);
+
+	public boolean matchForYear(Document doc, String year);
 }
