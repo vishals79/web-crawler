@@ -44,10 +44,24 @@ public class WebCrawlerService {
 
 	private static Log logger = LogFactory.getLog(WebCrawlerService.class);
 
-	public WebCrawlerService(Filter filter,Parser parser) {
+	public WebCrawlerService() {
 		super();
-		this.filter = filter;
-		this.parser = parser;
+		initialize();
+	}
+	
+	private int initialize(){
+		try {
+			ApplicationContext context = new ClassPathXmlApplicationContext(
+					"spring.xml");
+			this.filter = (Filter) context
+					.getBean("filter");
+			this.parser = (Parser) context
+					.getBean("parser");
+			return 1;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return 0;
 	}
 
 	public static void main(String[] args) {
@@ -60,8 +74,7 @@ public class WebCrawlerService {
 
 			ApplicationContext context = new ClassPathXmlApplicationContext(
 					"spring.xml");
-			WebCrawlerService webCrawlerService = (WebCrawlerService) context
-					.getBean("webCrawler");
+			WebCrawlerService webCrawlerService = new WebCrawlerService();
 
 			inputStream = WebCrawlerService.class.getClassLoader()
 					.getResourceAsStream("input.properties");
@@ -89,12 +102,14 @@ public class WebCrawlerService {
 		try {
 			if (isEmpty(baseUrl)) {
 				logger.info("Could not proceed further because URL is not present");
+				return -1;
 			}
 			if (isEmpty(downloadPath)) {
 				logger.info("Please provide the path to download emails.");
+				return -1;
 			}
 
-			initializeProcess(arrayOfinputs, baseUrl, "NO_FILTERING_REQUIRED",
+			preProcess(arrayOfinputs, baseUrl, "NO_FILTERING_REQUIRED",
 					downloadPath);
 			iterateFetchedUrls();
 			return 1;
@@ -103,7 +118,10 @@ public class WebCrawlerService {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
+		
 		
 		return -1;
 	}
@@ -128,7 +146,7 @@ public class WebCrawlerService {
 				return;
 			}
 
-			initializeProcess(arrayOfinputs, baseUrl, "FILTER_BASED_ON_YEAR",
+			preProcess(arrayOfinputs, baseUrl, "FILTER_BASED_ON_YEAR",
 					downloadPath);
 			iterateFetchedUrls();
 
@@ -138,8 +156,8 @@ public class WebCrawlerService {
 			e.printStackTrace();
 		}
 	}
-
-	private void initializeProcess(Object[] arrayOfinputs, String baseUrl,
+	
+	private void preProcess(Object[] arrayOfinputs, String baseUrl,
 			String filterCriteriaText, String downloadPath) throws IOException {
 		Properties configFile = new Properties();
 		InputStream inputStream = null;
@@ -285,5 +303,21 @@ public class WebCrawlerService {
 				return false;
 			}
 		}
+	}
+
+	public Filter getFilter() {
+		return filter;
+	}
+
+	public void setFilter(Filter filter) {
+		this.filter = filter;
+	}
+
+	public Parser getParser() {
+		return parser;
+	}
+
+	public void setParser(Parser parser) {
+		this.parser = parser;
 	}
 }
