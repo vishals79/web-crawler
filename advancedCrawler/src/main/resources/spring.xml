@@ -10,4 +10,10 @@
 <bean id="parser" class="com.pramati.webcrawler.parser.WebCrawlerParserImpl">
 </bean>
 
+<bean id="manager" class="com.pramati.webcrawler.thread.ThreadManager">
+<property name="filter" ref="filter"></property>
+<property name="parser" ref="parser"></property>
+</bean>
+
+
 </beans>

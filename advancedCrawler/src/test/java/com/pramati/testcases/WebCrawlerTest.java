@@ -1,12 +1,11 @@
 package com.pramati.testcases;
 
+import junit.framework.TestCase;
+
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.pramati.webcrawler.service.WebCrawlerService;
-
-import junit.framework.TestCase;
 
 /**
  * Unit test for advanced web crawler
@@ -78,18 +77,4 @@ public class WebCrawlerTest
     	int actual  = service.downloadEmails("http://tsgtsftag.com", "/home/vishals/DownloadEmails/");
     	assertEquals(1, actual);
     }
-    
-    /*@Test
-    public void testInvalidPath(){
-    	int actual  = service.downloadEmails("http://mail-archives.apache.org/mod_mbox/maven-users/", "rdrqds/tft/stfft");
-    	assertEquals(1, actual);
-    }*/
-    
-    /* *//**
-     * @return the suite of tests being tested
-     *//*
-    public static Test suite()
-    {
-        return new TestSuite( WebCrawlerTest.class );
-    }*/
 }

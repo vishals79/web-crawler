@@ -21,13 +21,14 @@ import com.pramati.webcrawler.downloader.DownloaderImpl;
 import com.pramati.webcrawler.filter.Filter;
 import com.pramati.webcrawler.parser.Parser;
 import com.pramati.webcrawler.pojo.FilterCriteria;
+import com.pramati.webcrawler.thread.ThreadManager;
 
 /**
  * 
  * Web Crawler Service
  *
  */
-public class WebCrawlerService {
+public class WebCrawlerMultiThreadedService {
 	
 	private final String HTTP = "http://";
 	private final String HREF = "href";
@@ -41,27 +42,12 @@ public class WebCrawlerService {
 	private String homeAddress = null;
 	private Filter filter = null;
 	private Parser parser = null;
-
-	private static Log logger = LogFactory.getLog(WebCrawlerService.class);
-
-	public WebCrawlerService() {
-		super();
-		initialize();
-	}
+	private ThreadManager manager = null;
 	
-	private int initialize(){
-		try {
-			ApplicationContext context = new ClassPathXmlApplicationContext(
-					"spring.xml");
-			this.filter = (Filter) context
-					.getBean("filter");
-			this.parser = (Parser) context
-					.getBean("parser");
-			return 1;
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return 0;
+	private static Log logger = LogFactory.getLog(WebCrawlerMultiThreadedService.class);
+
+	public WebCrawlerMultiThreadedService() {
+		super();
 	}
 
 	public static void main(String[] args) {
@@ -73,14 +59,11 @@ public class WebCrawlerService {
 		Properties configFile = new Properties();
 		InputStream inputStream = null;
 		int processRetVal = 0;
+		
 		try {
-
-			ApplicationContext context = new ClassPathXmlApplicationContext(
-					"spring.xml");
-
-			WebCrawlerService webCrawlerService = new WebCrawlerService();
-
-			inputStream = WebCrawlerService.class.getClassLoader()
+			WebCrawlerMultiThreadedService webCrawlerService = new WebCrawlerMultiThreadedService();
+			
+			inputStream = WebCrawlerMultiThreadedService.class.getClassLoader()
 					.getResourceAsStream("secondInput.properties");
 			if (inputStream != null) {
 				configFile.load(inputStream);
@@ -88,6 +71,7 @@ public class WebCrawlerService {
 						configFile.getProperty("baseUrl"),
 						configFile.getProperty("downloadFolder"));
 			}
+
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -115,9 +99,11 @@ public class WebCrawlerService {
 				return -1;
 			}
 
-			preProcess(arrayOfinputs, baseUrl, "NO_FILTERING_REQUIRED",
+			initialize(arrayOfinputs, baseUrl, "NO_FILTERING_REQUIRED",
 					downloadPath);
-			iterateFetchedUrls();
+			if(manager != null){
+				manager.startCrawling();
+			}
 			return 1;
 
 		} catch (NumberFormatException e) {
@@ -151,9 +137,11 @@ public class WebCrawlerService {
 				return;
 			}
 
-			preProcess(arrayOfinputs, baseUrl, "FILTER_BASED_ON_YEAR",
+			initialize(arrayOfinputs, baseUrl, "FILTER_BASED_ON_YEAR",
 					downloadPath);
-			iterateFetchedUrls();
+			if(manager != null){
+				manager.startCrawling();
+			}
 
 		} catch (NumberFormatException e) {
 			e.printStackTrace();
@@ -162,17 +150,24 @@ public class WebCrawlerService {
 		}
 	}
 	
-	private void preProcess(Object[] arrayOfinputs, String baseUrl,
+	
+	private void initialize(Object[] arrayOfinputs, String baseUrl,
 			String filterCriteriaText, String downloadPath) throws IOException {
 		Properties configFile = new Properties();
 		InputStream inputStream = null;
 		if (arrayOfinputs != null) {
+			
+			ApplicationContext context = new ClassPathXmlApplicationContext(
+					"spring.xml");
+			manager = (ThreadManager) context
+					.getBean("manager");
+			
 			this.baseUrl = baseUrl;
 			visitedUrls = new HashMap<String, String>();
 			fetchedUrls = new HashMap<String, String>();
 			fetchedUrls.put(baseUrl, baseUrl);
 
-			inputStream = WebCrawlerService.class.getClassLoader()
+			inputStream = WebCrawlerMultiThreadedService.class.getClassLoader()
 					.getResourceAsStream("filterCriteria.properties");
 			if (inputStream != null) {
 				configFile.load(inputStream);
@@ -182,6 +177,13 @@ public class WebCrawlerService {
 
 			this.downloadPath = downloadPath;
 			this.homeAddress = getHomeAddress(baseUrl);
+			
+			if(manager != null){
+				manager.setBaseUrl(baseUrl);
+				manager.setCriteriaNo(criteriaNo);
+				manager.setDownloadPath(downloadPath);
+				manager.setHomeAddress(homeAddress);
+			}
 
 			if (criteriaNo == 1) {
 				filterCriteriaObj = new FilterCriteria();
@@ -252,9 +254,7 @@ public class WebCrawlerService {
 						}
 					} else {
 						addUrl = createUrl(url, href);
-						if (addUrl.startsWith(baseUrl)) {
-							fetchedUrls.put(addUrl, addUrl);
-						}
+						fetchedUrls.put(addUrl, addUrl);
 					}
 				}
 			}

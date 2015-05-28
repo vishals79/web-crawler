@@ -1,12 +1,11 @@
 package com.pramati.webcrawler.downloader;
 
-import org.jsoup.nodes.Document;
-
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.zip.ZipFile;
+
+import org.jsoup.nodes.Document;
 
 public class DownloaderImpl implements Downloader {
 
@@ -17,7 +16,6 @@ public class DownloaderImpl implements Downloader {
         FileWriter fileWriter;
         BufferedWriter bufferedWriter = null;
 
-
         try {
             if (doc != null) {
                 File dir = new File(path);
@@ -25,8 +23,7 @@ public class DownloaderImpl implements Downloader {
                     dir.mkdir();
                 }
 
-                file = new File(path + "email" + DownloaderImpl.emailCount);
-                DownloaderImpl.emailCount++;
+                file = new File(path + "email" + getEmailCount());
                 if (!file.exists()) {
                     file.createNewFile();
                 }
@@ -46,4 +43,9 @@ public class DownloaderImpl implements Downloader {
             }
         }
     }
+
+	public static synchronized int getEmailCount() {
+		int count = emailCount++;
+		return count;
+	}
 }
