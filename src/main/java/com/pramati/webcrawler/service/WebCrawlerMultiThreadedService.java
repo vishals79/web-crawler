@@ -50,7 +50,7 @@ public class WebCrawlerMultiThreadedService {
 			WebCrawlerMultiThreadedService webCrawlerService = new WebCrawlerMultiThreadedService();
 			
 			inputStream = WebCrawlerMultiThreadedService.class.getClassLoader()
-					.getResourceAsStream("input.properties");
+					.getResourceAsStream("secondInput.properties");
 			if (inputStream != null) {
 				configFile.load(inputStream);
 				processRetVal = webCrawlerService.downloadEmails(
