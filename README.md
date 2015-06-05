@@ -11,8 +11,9 @@ A simple generic web crawler to download emails from a website.
 
 ## How to crawl
 * Checkout the project, compile and create a jar.
-* Running the jar e.g. 
+* Run the jar e.g. 
 	java -jar jar-name.jar start-point path-to-download-emails
+	e.g. java -jar advancedCrawler-0.0.1.one-jar.jar http://test-site.com /home/user/DownloadEmails
 
 
 
@@ -22,8 +23,6 @@ A simple generic web crawler to download emails from a website.
 	* minThreads = minimum number of threads
 	* maxThreads = maximum number of threads
 	* waitTime = Delay time. Invigilator will wait for 'waitTime' secs to check the difference in url queue size.
-
-	filter-criteria.properties
 
 	log4j.properties
 	* log4j.appender.file.File= Path to save log.
