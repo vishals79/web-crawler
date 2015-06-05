@@ -1,6 +1,6 @@
 # web-crawler
 
-![alt text](https://github.com/vishals79/web-crawler/blob/master/etc/invigilator.jpg "Class Diagram")
+![alt text](https://github.com/vishals79/web-crawler/blob/master/etc/web-crawler-class-diagram.jpg "Class Diagram")
 
 ![alt text](https://github.com/vishals79/web-crawler/blob/master/etc/main-flow.jpg "Main Flow")
 
