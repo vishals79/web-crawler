@@ -10,6 +10,10 @@ A simple generic web crawler to download emails from a website.
 
 
 ## How to crawl
+* Checkout the project, compile and create a jar.
+* Running the jar e.g. 
+	java -jar jar-name.jar start-point path-to-download-emails
+
 
 
 ## Configuration
