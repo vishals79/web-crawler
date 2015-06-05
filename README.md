@@ -14,10 +14,6 @@ A simple generic web crawler to download emails from a website.
 
 ## Configuration
 
-	input.properties
-	* baseUrl = Start Point.
-	* downloadFolder = Path to save emails
-
 	thread.properties
 	* minThreads = minimum number of threads
 	* maxThreads = maximum number of threads
