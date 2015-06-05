@@ -14,19 +14,19 @@ A simple generic web crawler to download emails from a website.
 
 ## Configuration
 
-### input.properties
-* baseUrl = Start Point.
-* downloadFolder = Path to save emails
+	### input.properties
+	* baseUrl = Start Point.
+	* downloadFolder = Path to save emails
 
-### thread.properties
-* minThreads = minimum number of threads
-* maxThreads = maximum number of threads
-* waitTime = Delay time. Invigilator will wait for 'waitTime' secs to check the difference in url queue size.
+	### thread.properties
+	* minThreads = minimum number of threads
+	* maxThreads = maximum number of threads
+	* waitTime = Delay time. Invigilator will wait for 'waitTime' secs to check the difference in url queue size.
 
-### filter-criteria.properties
+	### filter-criteria.properties
 
-### log4j.properties
-* log4j.appender.file.File= Path to save log.
+	### log4j.properties
+	* log4j.appender.file.File= Path to save log.
 
 
 ## Class Diagram
