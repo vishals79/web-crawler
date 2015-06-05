@@ -17,7 +17,7 @@ import com.pramati.webcrawler.thread.ThreadManager;
  * Web Crawler Service
  *
  */
-public class WebCrawlerService {
+public class WebCrawlerTestService {
 	
 	private String baseUrl = null;
 	private FilterCriteria filterCriteriaObj = null;
@@ -26,43 +26,44 @@ public class WebCrawlerService {
 	private String homeAddress = null;
 	private ThreadManager manager = null;
 	
-	private final String HTTP = "http://";
-	private final String HTTPS = "https://";
-	
 	private static Log logger = LogFactory.getLog(WebCrawlerService.class);
 
-	public WebCrawlerService() {
+	public WebCrawlerTestService() {
 		super();
 	}
 
 	public static void main(String[] args) {
 		logger.info("-----Starting Crawler-----");
-		System.out.println("Web Crawler started");
-		System.out.println("Crawling...");
+		System.out.println("-----Starting Crawler-----");
 		long start = System.currentTimeMillis();
 		long end = 0;
 
+		Properties configFile = new Properties();
+		InputStream inputStream = null;
 		int processRetVal = 0;
 		
 		try {
 			WebCrawlerService webCrawlerService = new WebCrawlerService();
 			
-			if(args != null && args.length >= 2){
-				processRetVal = webCrawlerService.downloadEmails(args[0],args[1]);
-			}else{
-				System.out.println("Please provide 'Start Point' and 'Path to download emails'");
+			inputStream = WebCrawlerService.class.getClassLoader()
+					.getResourceAsStream("secondInput.properties");
+			if (inputStream != null) {
+				configFile.load(inputStream);
+				processRetVal = webCrawlerService.downloadEmails(
+						configFile.getProperty("baseUrl"),
+						configFile.getProperty("downloadFolder"));
 			}
 
-		} catch (Exception e) {
+		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		if(processRetVal > 0){
 			end = System.currentTimeMillis();
 			logger.info("-----Process Complete-----");
-			System.out.println("Process Complete");
-			System.out.println("Time Taken = "+(end-start));
+			System.out.println("-----Process Complete-----");
+			System.out.println("-----Time Taken = "+(end-start));
 		}else{
-			logger.info("Error occured while downloading emails");
+			logger.info("-----Error occured while downloading emails-----");
 		}
 		
 	}
@@ -75,15 +76,10 @@ public class WebCrawlerService {
 				logger.info("Could not proceed further because URL is not present");
 				return -1;
 			}
-			if (!(baseUrl.startsWith(HTTP) || baseUrl.startsWith(HTTPS))) {
-				logger.info("Invalid Url");
-				return -1;
-			}
 			if (isEmpty(downloadPath)) {
 				logger.info("Please provide the path to download emails.");
 				return -1;
 			}
-			
 
 			initialize(arrayOfinputs, baseUrl, "NO_FILTERING_REQUIRED",
 					downloadPath);

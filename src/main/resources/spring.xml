@@ -10,9 +10,13 @@
 <bean id="parser" class="com.pramati.webcrawler.parser.WebCrawlerParserImpl">
 </bean>
 
-<bean id="manager" class="com.pramati.webcrawler.thread.ThreadManager">
+<bean id="manager" class="com.pramati.webcrawler.thread.ThreadManager" scope="prototype">
 <property name="filter" ref="filter"></property>
 <property name="parser" ref="parser"></property>
+<constructor-arg index="0" value="1" type="int"></constructor-arg>
+<constructor-arg index="1" value="" type="java.lang.String"></constructor-arg>
+<constructor-arg index="2" value="" type="java.lang.String"></constructor-arg>
+<constructor-arg index="3" value="" type="java.lang.String"></constructor-arg>
 </bean>
 
 

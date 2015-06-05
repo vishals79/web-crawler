@@ -57,7 +57,7 @@ public class URLProcesser implements Runnable{
 			try{
 				while(true){
 					if(trigger.isTaskComplete()){
-						System.out.println(Thread.currentThread().getName()+" isTaskComplete :"+trigger.isTaskComplete());
+						logger.info(Thread.currentThread().getName()+" isTaskComplete :"+trigger.isTaskComplete());
 						break;
 					}
 					url = fetchURL();
@@ -164,7 +164,8 @@ public class URLProcesser implements Runnable{
 		try {
 			doc = Jsoup.connect(url).get();
 		} catch (IOException e) {
-		}
+		} 
+		
 		return doc;
 	}
 	

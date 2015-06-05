@@ -40,11 +40,18 @@ public class ThreadManager {
 
 	private static Log logger = LogFactory.getLog(ThreadManager.class);
 
-	public ThreadManager() {
+	public ThreadManager(int criteriaNo, String downloadPath, String baseUrl,
+			String homeAddress) {
+		
+		super();
+		this.criteriaNo = criteriaNo;
+		this.downloadPath = downloadPath;
+		this.baseUrl = baseUrl;
+		this.homeAddress = homeAddress;
+		
 		urlsQueue = new LinkedBlockingDeque<String>();
 		seenUrls = new HashMap<String, String>();
 		trigger = new Trigger();
-
 	}
 
 	private int initialize() {
@@ -100,13 +107,13 @@ public class ThreadManager {
 		try {
 			response = initialize();
 			if (response != 0) {
-				logger.info(" Thread Manager sucessfully initialized ");
+				logger.info(" Thread Manager successfully initialized ");
 				response = startThreads();
 				if (response != 0) {
-					logger.info(" Threads sucessfully started ");
+					logger.info(" Threads successfully started ");
 					response = startInvigilator();
 					if (response != 0) {
-						logger.info(" Invigilator sucessfully started ");
+						logger.info(" Invigilator successfully started ");
 					} else {
 						logger.error(" Error occurred while starting Invigilator ");
 						return 0;
@@ -127,8 +134,6 @@ public class ThreadManager {
 			end = System.currentTimeMillis();
 			timeTaken = end - start;
 			logger.info("Time taken by Thread manager = " + timeTaken);
-
-			System.out.println(" Time Taken :" + timeTaken);
 
 			return 1;
 
@@ -202,7 +207,7 @@ public class ThreadManager {
 				if (emptyQueue) {
 					trigger.setTaskComplete(true);
 					logger.info(" Task Completed. Trigger generated to stop threads ");
-					System.out.println(Thread.currentThread().getName()
+					logger.info(Thread.currentThread().getName()
 							+ " changed isTaskComplete :"
 							+ trigger.isTaskComplete());
 				}

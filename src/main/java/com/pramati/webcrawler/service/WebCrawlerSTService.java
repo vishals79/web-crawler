@@ -2,25 +2,38 @@ package com.pramati.webcrawler.service;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
+import com.pramati.webcrawler.downloader.Downloader;
+import com.pramati.webcrawler.downloader.DownloaderImpl;
 import com.pramati.webcrawler.filter.Filter;
 import com.pramati.webcrawler.parser.Parser;
 import com.pramati.webcrawler.pojo.FilterCriteria;
-import com.pramati.webcrawler.thread.ThreadManager;
 
 /**
  * 
  * Web Crawler Service
  *
  */
-public class WebCrawlerMultiThreadedService {
+public class WebCrawlerSTService {
 	
+	private final String HTTP = "http://";
+	private final String HREF = "href";
+
+	private Map<String, String> visitedUrls = null;
+	private Map<String, String> fetchedUrls = null;
 	private String baseUrl = null;
 	private FilterCriteria filterCriteriaObj = null;
 	private int criteriaNo = 0;
@@ -28,12 +41,27 @@ public class WebCrawlerMultiThreadedService {
 	private String homeAddress = null;
 	private Filter filter = null;
 	private Parser parser = null;
-	private ThreadManager manager = null;
-	
-	private static Log logger = LogFactory.getLog(WebCrawlerMultiThreadedService.class);
 
-	public WebCrawlerMultiThreadedService() {
+	private static Log logger = LogFactory.getLog(WebCrawlerSTService.class);
+
+	public WebCrawlerSTService() {
 		super();
+		initialize();
+	}
+	
+	private int initialize(){
+		try {
+			ApplicationContext context = new ClassPathXmlApplicationContext(
+					"spring.xml");
+			this.filter = (Filter) context
+					.getBean("filter");
+			this.parser = (Parser) context
+					.getBean("parser");
+			return 1;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return 0;
 	}
 
 	public static void main(String[] args) {
@@ -45,11 +73,11 @@ public class WebCrawlerMultiThreadedService {
 		Properties configFile = new Properties();
 		InputStream inputStream = null;
 		int processRetVal = 0;
-		
 		try {
-			WebCrawlerMultiThreadedService webCrawlerService = new WebCrawlerMultiThreadedService();
-			
-			inputStream = WebCrawlerMultiThreadedService.class.getClassLoader()
+
+			WebCrawlerSTService webCrawlerService = new WebCrawlerSTService();
+
+			inputStream = WebCrawlerSTService.class.getClassLoader()
 					.getResourceAsStream("secondInput.properties");
 			if (inputStream != null) {
 				configFile.load(inputStream);
@@ -57,7 +85,6 @@ public class WebCrawlerMultiThreadedService {
 						configFile.getProperty("baseUrl"),
 						configFile.getProperty("downloadFolder"));
 			}
-
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -85,11 +112,9 @@ public class WebCrawlerMultiThreadedService {
 				return -1;
 			}
 
-			initialize(arrayOfinputs, baseUrl, "NO_FILTERING_REQUIRED",
+			preProcess(arrayOfinputs, baseUrl, "NO_FILTERING_REQUIRED",
 					downloadPath);
-			if(manager != null){
-				manager.startProcess();
-			}
+			iterateFetchedUrls();
 			return 1;
 
 		} catch (NumberFormatException e) {
@@ -106,7 +131,7 @@ public class WebCrawlerMultiThreadedService {
 
 	public void downloadEmailsForYear(String baseUrl, String downloadPath,
 			String year) {
-		this.setBaseUrl(baseUrl);
+		this.baseUrl = baseUrl;
 		Object[] arrayOfinputs = new Object[1];
 
 		try {
@@ -123,11 +148,9 @@ public class WebCrawlerMultiThreadedService {
 				return;
 			}
 
-			initialize(arrayOfinputs, baseUrl, "FILTER_BASED_ON_YEAR",
+			preProcess(arrayOfinputs, baseUrl, "FILTER_BASED_ON_YEAR",
 					downloadPath);
-			if(manager != null){
-				manager.startProcess();
-			}
+			iterateFetchedUrls();
 
 		} catch (NumberFormatException e) {
 			e.printStackTrace();
@@ -136,21 +159,17 @@ public class WebCrawlerMultiThreadedService {
 		}
 	}
 	
-	
-	private void initialize(Object[] arrayOfinputs, String baseUrl,
+	private void preProcess(Object[] arrayOfinputs, String baseUrl,
 			String filterCriteriaText, String downloadPath) throws IOException {
 		Properties configFile = new Properties();
 		InputStream inputStream = null;
 		if (arrayOfinputs != null) {
-			
-			ApplicationContext context = new ClassPathXmlApplicationContext(
-					"spring.xml");
-			manager = (ThreadManager) context
-					.getBean("manager");
-			
-			this.setBaseUrl(baseUrl);
+			this.baseUrl = baseUrl;
+			visitedUrls = new HashMap<String, String>();
+			fetchedUrls = new HashMap<String, String>();
+			fetchedUrls.put(baseUrl, baseUrl);
 
-			inputStream = WebCrawlerMultiThreadedService.class.getClassLoader()
+			inputStream = WebCrawlerSTService.class.getClassLoader()
 					.getResourceAsStream("filterCriteria.properties");
 			if (inputStream != null) {
 				configFile.load(inputStream);
@@ -158,21 +177,99 @@ public class WebCrawlerMultiThreadedService {
 						.getProperty(filterCriteriaText));
 			}
 
-			this.setDownloadPath(downloadPath);
+			this.downloadPath = downloadPath;
 			this.homeAddress = getHomeAddress(baseUrl);
-			
-			if(manager != null){
-				manager.setBaseUrl(baseUrl);
-				manager.setCriteriaNo(criteriaNo);
-				manager.setDownloadPath(downloadPath);
-				manager.setHomeAddress(homeAddress);
-			}
 
 			if (criteriaNo == 1) {
 				filterCriteriaObj = new FilterCriteria();
 				filterCriteriaObj.setForYear((String) arrayOfinputs[0]);
 			}
 		}
+	}
+	
+	
+
+	private void iterateFetchedUrls() {
+		int size = 0;
+		Set<String> setOfKeys = null;
+		String url = null;
+		if (fetchedUrls != null) {
+			size = fetchedUrls.size();
+			while (size > 0) {
+				setOfKeys = fetchedUrls.keySet();
+				for (String key : setOfKeys) {
+					url = key;
+					if (!visitedUrls.containsKey(url)) {
+						processReqForUrl(url);
+						visitedUrls.put(url, url);
+					}
+					break;
+				}
+				fetchedUrls.remove(url);
+				size = fetchedUrls.size();
+			}
+		}
+	}
+
+	private void processReqForUrl(String url) {
+		Document responseObj = null;
+		Elements links = null;
+		Downloader downloader = null;
+
+		if (isNotEmpty(url)) {
+			responseObj = getResponse(url);
+			if (responseObj != null) {
+				links = parser.parseForAnchors(responseObj);
+				populateUrlsCollection(url, links);
+				if (filter.isEmail(responseObj)) {
+					if (criteriaNo == 0) {
+						downloader = new DownloaderImpl();
+						downloader.downloadEmail(downloadPath, responseObj);
+					}else if(criteriaNo == 1){
+						downloader = new DownloaderImpl();
+						downloader.downloadEmail(downloadPath, responseObj);
+					}
+				}
+			} else {
+				logger.info(" Could not get any response from the url " + url);
+			}
+		}
+	}
+
+	private void populateUrlsCollection(String url, Elements links) {
+		String href = null;
+		String addUrl = null;
+		if (links != null && links.size() > 0) {
+			if (fetchedUrls != null) {
+				for (Element link : links) {
+					href = link.attr(HREF);
+					if (href.startsWith(HTTP)) {
+						if (href.startsWith(baseUrl)) {
+							fetchedUrls.put(href, href);
+						}
+					} else {
+						addUrl = createUrl(url, href);
+						if (addUrl.startsWith(baseUrl)) {
+							fetchedUrls.put(addUrl, addUrl);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	private String createUrl(String url, String href) {
+		StringBuilder newUrl = new StringBuilder();
+		if (isNotEmpty(url)) {
+			if (href.indexOf('/') == 0) {
+				newUrl = newUrl.append(homeAddress).append(href);
+			} else {
+				newUrl = newUrl.append(
+						url.substring(0, url.lastIndexOf('/') + 1))
+						.append(href);
+			}
+		}
+		return newUrl.toString();
 	}
 
 	private String getHomeAddress(String baseUrl) {
@@ -188,6 +285,15 @@ public class WebCrawlerMultiThreadedService {
 			}
 		}
 		return homeAddress.toString();
+	}
+
+	private Document getResponse(String url) {
+		Document doc = null;
+		try {
+			doc = Jsoup.connect(url).get();
+		} catch (IOException e) {
+		}
+		return doc;
 	}
 
 	private boolean isNotEmpty(String str) {
@@ -224,21 +330,5 @@ public class WebCrawlerMultiThreadedService {
 
 	public void setParser(Parser parser) {
 		this.parser = parser;
-	}
-
-	public String getBaseUrl() {
-		return baseUrl;
-	}
-
-	public void setBaseUrl(String baseUrl) {
-		this.baseUrl = baseUrl;
-	}
-
-	public String getDownloadPath() {
-		return downloadPath;
-	}
-
-	public void setDownloadPath(String downloadPath) {
-		this.downloadPath = downloadPath;
 	}
 }
