@@ -21,9 +21,15 @@ A simple generic web crawler to download emails from a website.
 
 ## Flow Diagram
 
+### Main Flow
+
 ![alt text](https://github.com/vishals79/web-crawler/blob/master/etc/main-flow.jpg "Main Flow")
 
+### URLProcessor Flow
+
 ![alt text](https://github.com/vishals79/web-crawler/blob/master/etc/url-processor.jpg "URL Processor")
+
+### Invigilator Flow
 
 ![alt text](https://github.com/vishals79/web-crawler/blob/master/etc/invigilator.jpg "Invigilator")
 
