@@ -1,8 +1,11 @@
 package com.pramati.testcases;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+
 import junit.framework.TestCase;
 
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.pramati.webcrawler.service.WebCrawlerService;
@@ -14,6 +17,11 @@ public class WebCrawlerTest
     extends TestCase
 {
 	private static WebCrawlerService service = null;
+	
+	private static String downloadFolder;
+	private static Properties configFile = new Properties();
+	private static InputStream inputStream = null;
+	private static final String PROPERTY_FILE_NAME = "application.properties";
     /**
      * Create the test case
      *
@@ -23,22 +31,39 @@ public class WebCrawlerTest
     {
         super( testName );
         service = new WebCrawlerService();
+        initialize();
     }
     
-    @BeforeClass
-    public static void init(){
-    	System.out.println("Before Class");
+    public static void initialize(){
+    	inputStream = WebCrawlerService.class.getClassLoader()
+				.getResourceAsStream(PROPERTY_FILE_NAME);
+		try {
+			if (inputStream != null) {
+				configFile.load(inputStream);
+				downloadFolder = configFile
+						.getProperty("download.directory");
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
     }
     
     @Test
     public void testEmptyUrl(){
-    	int actual  = service.downloadEmails("", "/home/vishals/DownloadEmails/");
-    	assertEquals(-1, actual);
+    	int actual  = -1;
+    	if (downloadFolder != null && downloadFolder.length() > 0) {
+			actual = service
+					.downloadEmails("", downloadFolder);
+		}
+		assertEquals(-1, actual);
     }
     
     @Test
     public void testNullUrl(){
-    	int actual  = service.downloadEmails(null, "/home/vishals/DownloadEmails/");
+    	int actual  = -1;
+    	if (downloadFolder != null && downloadFolder.length() > 0) {
+			actual =  service.downloadEmails(null, downloadFolder);
+    	}
     	assertEquals(-1, actual);
     }
     
@@ -68,13 +93,19 @@ public class WebCrawlerTest
     
     @Test
     public void testInvalidProtocolUrl(){
-    	int actual  = service.downloadEmails("invalid", "/home/vishals/DownloadEmails/");
+    	int actual  = -1;
+    	if (downloadFolder != null && downloadFolder.length() > 0) {
+    		actual  = service.downloadEmails("invalid", downloadFolder);
+    	}
     	assertEquals(-1, actual);
     }
     
     @Test
     public void testUrlDoesNotExist(){
-    	int actual  = service.downloadEmails("http://tsgtsftag.com", "/home/vishals/DownloadEmails/");
+    	int actual  = 1;
+    	if (downloadFolder != null && downloadFolder.length() > 0) {
+    		actual  = service.downloadEmails("http://tsgtsftag.com", downloadFolder);
+    	}
     	assertEquals(1, actual);
     }
 }
