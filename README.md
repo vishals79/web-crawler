@@ -19,10 +19,15 @@ A simple generic web crawler to download emails from a website.
 
 ## Configuration
 
-	thread.properties
-	* minThreads = minimum number of threads
-	* maxThreads = maximum number of threads
-	* waitTime = Delay time. Invigilator will wait for 'waitTime' secs to check the difference in url queue size.
+	application.properties
+	## Input
+	* base.URL = URL to download emails.
+	* download.directory = Directory path to save emails.
+	
+	## Thread
+	* min.threads = minimum number of threads.
+	* max.threads = maximum number of threads.
+	* wait.time = Delay time. Invigilator will wait for 'waitTime' secs to check the difference in url queue size.
 
 	log4j.properties
 	* log4j.appender.file.File= Path to save log.
