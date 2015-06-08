@@ -9,7 +9,7 @@ A simple generic web crawler to download emails from a website.
 * If a page is redirected to another domain or outside of parent location, that page is not picked up for crawling.
 
 
-## How to crawl
+## How to crawl 
 * Checkout the project, compile and create a jar.
 * Run the jar e.g. 
 	java -jar jar-name.jar start-point path-to-download-emails
