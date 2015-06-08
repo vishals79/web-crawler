@@ -4,7 +4,7 @@
 
 A simple generic web crawler to download emails from a website. 
 * Crawl from the start point.
-* A page is identified as an email on the basis of filter (A page should contain "From", "Date" and "Subject" for it to be considered as an email.) 
+* A page is identified as an email on the basis of filter (A page should contain "From", "Date" and "Subject" for it to be considered as an email.)
 * Emails are downloaded in user provided path.
 * If a page is redirected to another domain or outside of parent location, that page is not picked up for crawling.
 
