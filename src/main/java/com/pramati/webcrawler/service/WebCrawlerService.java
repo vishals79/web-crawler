@@ -28,6 +28,7 @@ public class WebCrawlerService {
 	
 	private final String HTTP = "http://";
 	private final String HTTPS = "https://";
+	private String PROTOCOL;
 	
 	private static Log logger = LogFactory.getLog(WebCrawlerService.class);
 
@@ -85,7 +86,7 @@ public class WebCrawlerService {
 			}
 			
 
-			initialize(arrayOfinputs, baseUrl, "NO_FILTERING_REQUIRED",
+			initialize(arrayOfinputs, baseUrl, "filtering.not.required",
 					downloadPath);
 			if(manager != null){
 				manager.startProcess();
@@ -123,7 +124,7 @@ public class WebCrawlerService {
 				return;
 			}
 
-			initialize(arrayOfinputs, baseUrl, "FILTER_BASED_ON_YEAR",
+			initialize(arrayOfinputs, baseUrl, "filter.based.on.year",
 					downloadPath);
 			if(manager != null){
 				manager.startProcess();
@@ -149,7 +150,7 @@ public class WebCrawlerService {
 			this.setBaseUrl(baseUrl);
 
 			inputStream = WebCrawlerService.class.getClassLoader()
-					.getResourceAsStream("filterCriteria.properties");
+					.getResourceAsStream("application.properties");
 			if (inputStream != null) {
 				configFile.load(inputStream);
 				criteriaNo = Integer.valueOf(configFile
@@ -173,12 +174,17 @@ public class WebCrawlerService {
 		StringBuilder homeAddress = new StringBuilder();
 		String tempString = null;
 		if (isNotEmpty(baseUrl)) {
-			tempString = baseUrl.replace("http://", "");
+			if(baseUrl.startsWith(HTTP)){
+				PROTOCOL = HTTP;
+			}else{
+				PROTOCOL = HTTPS;
+			}
+			tempString = baseUrl.replace(PROTOCOL, "");
 			if (tempString.indexOf('/') != -1) {
-				homeAddress.append("http://").append(
+				homeAddress.append(PROTOCOL).append(
 						tempString.substring(0, tempString.indexOf('/')));
 			} else {
-				homeAddress.append("http://").append(tempString);
+				homeAddress.append(PROTOCOL).append(tempString);
 			}
 		}
 		return homeAddress.toString();
