@@ -7,8 +7,9 @@ import java.util.Properties;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
 
+import com.pramati.webcrawler.common.InputData;
+import com.pramati.webcrawler.factory.BeanFactory;
 import com.pramati.webcrawler.pojo.FilterCriteria;
 import com.pramati.webcrawler.thread.ThreadManager;
 
@@ -70,7 +71,7 @@ public class WebCrawlerService {
 
 	public int downloadEmails(String baseUrl, String downloadPath) {
 		Object[] arrayOfinputs = new Object[1];
-
+		Thread threadManager = null;
 		try {
 			if (isEmpty(baseUrl)) {
 				logger.info("Could not proceed further because URL is not present");
@@ -89,7 +90,9 @@ public class WebCrawlerService {
 			initialize(arrayOfinputs, baseUrl, "filtering.not.required",
 					downloadPath);
 			if(manager != null){
-				manager.startProcess();
+				threadManager = new Thread(manager);
+				threadManager.start();
+				threadManager.join();
 			}
 			return 1;
 
@@ -109,7 +112,8 @@ public class WebCrawlerService {
 			String year) {
 		this.setBaseUrl(baseUrl);
 		Object[] arrayOfinputs = new Object[1];
-
+		Thread threadManager = null;
+		
 		try {
 			if (isEmpty(baseUrl)) {
 				logger.info("Could not proceed further because URL is not present");
@@ -127,7 +131,8 @@ public class WebCrawlerService {
 			initialize(arrayOfinputs, baseUrl, "filter.based.on.year",
 					downloadPath);
 			if(manager != null){
-				manager.startProcess();
+				threadManager = new Thread(manager);
+				threadManager.start();
 			}
 
 		} catch (NumberFormatException e) {
@@ -142,10 +147,9 @@ public class WebCrawlerService {
 			String filterCriteriaText, String downloadPath) throws IOException {
 		Properties configFile = new Properties();
 		InputStream inputStream = null;
+		InputData inputData = null;
+		ApplicationContext context = BeanFactory.getContext();
 		if (arrayOfinputs != null) {
-			
-			ApplicationContext context = new ClassPathXmlApplicationContext(
-					"spring.xml");
 			
 			this.setBaseUrl(baseUrl);
 
@@ -160,8 +164,10 @@ public class WebCrawlerService {
 			this.setDownloadPath(downloadPath);
 			this.homeAddress = getHomeAddress(baseUrl);
 			
+			inputData = (InputData) context
+						.getBean("inputData", new Object[]{criteriaNo,downloadPath,baseUrl,homeAddress});
 			manager = (ThreadManager) context
-					.getBean("manager", new Object[]{criteriaNo,downloadPath,baseUrl,homeAddress});
+					  .getBean("manager", new Object[]{inputData});
 			
 			if (criteriaNo == 1) {
 				filterCriteriaObj = new FilterCriteria();

@@ -12,13 +12,16 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import com.pramati.webcrawler.common.InputData;
+import com.pramati.webcrawler.common.RecoveryData;
+import com.pramati.webcrawler.common.URLProcessorData;
 import com.pramati.webcrawler.downloader.Downloader;
 import com.pramati.webcrawler.downloader.DownloaderImpl;
 import com.pramati.webcrawler.filter.Filter;
 import com.pramati.webcrawler.parser.Parser;
 import com.pramati.webcrawler.thread.trigger.Trigger;
 
-public class URLProcesser implements Runnable{
+public class URLProcessorWorker implements Runnable{
 	
 	private BlockingQueue<String> urlsQueue = null;
 	private Parser parser = null;
@@ -30,31 +33,39 @@ public class URLProcesser implements Runnable{
 	private String homeAddress = null;
 	private Map<String, String> seenUrls = null;
 	
-	private static Log logger = LogFactory.getLog(URLProcesser.class);
+	private InputData inputData;
+	private URLProcessorData urlProcessorData;
+	private RecoveryData recoveryData;
+	
+	private static Log logger = LogFactory.getLog(URLProcessorWorker.class);
 	
 	private final String HTTP = "http://";
 	private final String HREF = "href";
 	
 	private Trigger trigger = null;
 	
-	public URLProcesser(BlockingQueue<String> urlsQueue, Parser parser,
-			Filter filter, int criteriaNo, String downloadPath, String baseUrl,
-			String homeAddress, Map<String, String> seenUrls,Trigger trigger) {
+	public URLProcessorWorker(InputData inputData) {
 		super();
-		this.urlsQueue = urlsQueue;
-		this.parser = parser;
-		this.filter = filter;
-		this.criteriaNo = criteriaNo;
-		this.downloadPath = downloadPath;
-		this.baseUrl = baseUrl;
-		this.homeAddress = homeAddress;
-		this.seenUrls = seenUrls;
-		this.trigger = trigger;
+		if(inputData != null){
+			this.inputData = inputData;
+			this.criteriaNo = inputData.getCriteriaNo();
+			this.downloadPath = inputData.getDownloadPath();
+			this.baseUrl = inputData.getBaseUrl();
+			this.homeAddress = inputData.getHomeAddress();
+		}
+	}
+	
+	private void initialize(){
+		if(urlProcessorData != null){
+			this.urlsQueue = urlProcessorData.getUrlsQueue();
+			this.seenUrls = urlProcessorData.getSeenUrls();
+		}
 	}
 	
 	public void run() {
 		String url = null;
 			try{
+				initialize();
 				while(true){
 					if(trigger.isTaskComplete()){
 						logger.info(Thread.currentThread().getName()+" isTaskComplete :"+trigger.isTaskComplete());
@@ -183,5 +194,69 @@ public class URLProcesser implements Runnable{
 			url = urlsQueue.poll(5000, TimeUnit.MILLISECONDS);
 		}
 		return url;
+	}
+
+	public InputData getInputData() {
+		return inputData;
+	}
+
+	public void setInputData(InputData inputData) {
+		this.inputData = inputData;
+	}
+
+	public URLProcessorData getUrlProcessorData() {
+		return urlProcessorData;
+	}
+
+	public void setUrlProcessorData(URLProcessorData urlProcessorData) {
+		this.urlProcessorData = urlProcessorData;
+	}
+
+	public RecoveryData getRecoveryData() {
+		return recoveryData;
+	}
+
+	public void setRecoveryData(RecoveryData recoveryData) {
+		this.recoveryData = recoveryData;
+	}
+
+	public BlockingQueue<String> getUrlsQueue() {
+		return urlsQueue;
+	}
+
+	public void setUrlsQueue(BlockingQueue<String> urlsQueue) {
+		this.urlsQueue = urlsQueue;
+	}
+
+	public Map<String, String> getSeenUrls() {
+		return seenUrls;
+	}
+
+	public void setSeenUrls(Map<String, String> seenUrls) {
+		this.seenUrls = seenUrls;
+	}
+
+	public Parser getParser() {
+		return parser;
+	}
+
+	public void setParser(Parser parser) {
+		this.parser = parser;
+	}
+
+	public Filter getFilter() {
+		return filter;
+	}
+
+	public void setFilter(Filter filter) {
+		this.filter = filter;
+	}
+
+	public Trigger getTrigger() {
+		return trigger;
+	}
+
+	public void setTrigger(Trigger trigger) {
+		this.trigger = trigger;
 	}
 }

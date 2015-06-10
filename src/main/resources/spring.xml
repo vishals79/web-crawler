@@ -10,14 +10,39 @@
 <bean id="parser" class="com.pramati.webcrawler.parser.WebCrawlerParserImpl">
 </bean>
 
-<bean id="manager" class="com.pramati.webcrawler.thread.ThreadManager" scope="prototype">
-<property name="filter" ref="filter"></property>
-<property name="parser" ref="parser"></property>
-<constructor-arg index="0" value="1" type="int"></constructor-arg>
+<bean id="trigger" class="com.pramati.webcrawler.thread.trigger.Trigger">
+</bean>
+
+<bean id="inputData" class="com.pramati.webcrawler.common.InputData" scope="prototype">
+<constructor-arg index="0" value="0" type="int"></constructor-arg>
 <constructor-arg index="1" value="" type="java.lang.String"></constructor-arg>
 <constructor-arg index="2" value="" type="java.lang.String"></constructor-arg>
 <constructor-arg index="3" value="" type="java.lang.String"></constructor-arg>
 </bean>
 
+<bean id="recoveryData" class="com.pramati.webcrawler.common.RecoveryData">
+</bean>
 
+<bean id="urlProcessorData" class="com.pramati.webcrawler.common.URLProcessorData">
+</bean>
+
+<bean id="urlProcessorWorker" class="com.pramati.webcrawler.thread.URLProcessorWorker" scope="prototype">
+<property name="filter" ref="filter"></property>
+<property name="parser" ref="parser"></property>
+<property name="recoveryData" ref="recoveryData"></property>
+<property name="urlProcessorData" ref="urlProcessorData"></property>
+<property name="trigger" ref="trigger"></property>
+<constructor-arg index="0" value="" type="com.pramati.webcrawler.common.InputData"></constructor-arg>
+<constructor-arg index="1" value="" type="com.pramati.webcrawler.common.URLProcessorData"></constructor-arg>
+</bean>
+
+<bean id="urlProcessorManager" class="com.pramati.webcrawler.thread.URLProcessorManager" scope="prototype">
+<property name="trigger" ref="trigger"></property>
+<property name="urlProcessorData" ref="urlProcessorData"></property>
+</bean>
+
+<bean id="manager" class="com.pramati.webcrawler.thread.ThreadManager" scope="prototype">
+<property name="urlProcessorManager" ref="urlProcessorManager"></property>
+<constructor-arg index="0" value="" type="com.pramati.webcrawler.common.InputData"></constructor-arg>
+</bean>
 </beans>
