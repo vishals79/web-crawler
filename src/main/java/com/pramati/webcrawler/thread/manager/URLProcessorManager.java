@@ -1,4 +1,4 @@
-package com.pramati.webcrawler.thread;
+package com.pramati.webcrawler.thread.manager;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,6 +16,7 @@ import com.pramati.webcrawler.common.InputData;
 import com.pramati.webcrawler.common.URLProcessorData;
 import com.pramati.webcrawler.factory.BeanFactory;
 import com.pramati.webcrawler.thread.trigger.Trigger;
+import com.pramati.webcrawler.thread.worker.URLProcessorWorker;
 
 public class URLProcessorManager implements Runnable{
 
@@ -35,7 +36,7 @@ public class URLProcessorManager implements Runnable{
 
 	private Trigger trigger = null;
 
-	private static Log logger = LogFactory.getLog(ThreadManager.class);
+	private static Log logger = LogFactory.getLog(URLProcessorManager.class);
 
 	public URLProcessorManager() {
 		super();
@@ -70,8 +71,10 @@ public class URLProcessorManager implements Runnable{
 					seenUrls = urlProcessorData.getSeenUrls();
 				}
 				
-				urlsQueue.put(getBaseUrl());
-				seenUrls.put(getBaseUrl(), getBaseUrl());
+				if(urlsQueue != null && urlsQueue.size() == 0){
+					urlsQueue.put(getBaseUrl());
+					seenUrls.put(getBaseUrl(), getBaseUrl());
+				}
 
 				response = createInitialThreadPool();
 				if (response != 0) {
@@ -129,7 +132,6 @@ public class URLProcessorManager implements Runnable{
 			
 			end = System.currentTimeMillis();
 			timeTaken = end - start;
-			System.out.println("Time taken by URLProcessorManager = " + timeTaken);
 			logger.info("Time taken by URLProcessorManager = " + timeTaken);
 
 		} catch (InterruptedException e) {
@@ -138,7 +140,7 @@ public class URLProcessorManager implements Runnable{
 	}
 
 	private int createInitialThreadPool() {
-		int ret = 1;
+		int ret = 1; 
 		Thread thread = null;
 		for (int count = 0; count < minThreadsCount; count++) {
 			thread = createTask();

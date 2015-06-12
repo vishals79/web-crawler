@@ -1,17 +1,26 @@
 package com.pramati.webcrawler.service;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.BlockingQueue;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.context.ApplicationContext;
 
 import com.pramati.webcrawler.common.InputData;
+import com.pramati.webcrawler.common.URLProcessorData;
 import com.pramati.webcrawler.factory.BeanFactory;
 import com.pramati.webcrawler.pojo.FilterCriteria;
-import com.pramati.webcrawler.thread.ThreadManager;
+import com.pramati.webcrawler.recovery.MainQueueAccess;
+import com.pramati.webcrawler.thread.manager.ThreadManager;
 
 /**
  * 
@@ -27,9 +36,12 @@ public class WebCrawlerService {
 	private String homeAddress = null;
 	private ThreadManager manager = null;
 	
-	private final String HTTP = "http://";
-	private final String HTTPS = "https://";
+	private static final String HTTP = "http://";
+	private static final String HTTPS = "https://";
 	private String PROTOCOL;
+	
+	private static final String COMMA_DELIMITER = ",";
+	private static final String EQUAL_DELIMITER = "=";
 	
 	private static Log logger = LogFactory.getLog(WebCrawlerService.class);
 
@@ -142,6 +154,93 @@ public class WebCrawlerService {
 		}
 	}
 	
+	private boolean isRecoveryRequired(InputData inputData){
+		boolean isRecoveryRequired = false;
+		String fileName = getStatusFileName();
+		if(inputData != null && isNotEmpty(fileName)){
+			isRecoveryRequired = isLastRunInComplete(fileName, inputData);
+		}
+		return isRecoveryRequired;
+	}
+	
+	private boolean isLastRunInComplete(String fileName,InputData inputData){
+		boolean isTaskIncomplete = false;
+		BufferedReader fileReader = null;
+		String line = "";
+		String[] tokens = null;
+		String status = null;
+		String baseURL = null;
+		File file = null;
+		try {
+			if(isNotEmpty(fileName) && inputData != null){
+				file = new File(fileName);
+				if(file.exists()){
+					fileReader = new BufferedReader(new FileReader(fileName));
+					while ((line = fileReader.readLine()) != null) {
+						tokens = line.split(COMMA_DELIMITER);
+						if (tokens.length > 1) {
+							status = tokens[0].split(EQUAL_DELIMITER)[1];
+							baseURL = tokens[1].split(EQUAL_DELIMITER)[1];
+							break;
+						}
+					}
+					if(isNotEmpty(status) && isNotEmpty(baseURL)){
+						if("N".equalsIgnoreCase(status) && baseURL.equalsIgnoreCase(inputData.getBaseUrl())){
+							isTaskIncomplete = true;
+						}
+					}
+				}
+			}
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}finally {
+			try {
+				if (fileReader != null) {
+					fileReader.close();
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		return isTaskIncomplete;
+	}
+	
+	private String getStatusFileName(){
+		
+		Properties configFile;
+		InputStream inputStream;
+		String recoveryFileName;
+		String recoveryDirName;
+		String userCurrentDir = null;
+		StringBuilder temp = new StringBuilder();
+		String fileName = null;
+		
+		inputStream = WebCrawlerService.class.getClassLoader()
+				.getResourceAsStream("application.properties");
+		if (inputStream != null) {
+			try {
+				configFile = new Properties();
+				configFile.load(inputStream);
+				
+				recoveryDirName = configFile.getProperty("recovery.dir");
+				recoveryFileName = configFile
+						.getProperty("recovery.status.file");
+				
+				userCurrentDir = System.getProperty("user.dir");
+				
+				temp = temp.append(userCurrentDir).append("/").append(recoveryDirName).append("/").append(recoveryFileName);
+
+				fileName = temp.toString();
+				
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		return fileName;
+	}
+	
 	
 	private void initialize(Object[] arrayOfinputs, String baseUrl,
 			String filterCriteriaText, String downloadPath) throws IOException {
@@ -149,6 +248,7 @@ public class WebCrawlerService {
 		InputStream inputStream = null;
 		InputData inputData = null;
 		ApplicationContext context = BeanFactory.getContext();
+		boolean isRecoveryRequired = false;
 		if (arrayOfinputs != null) {
 			
 			this.setBaseUrl(baseUrl);
@@ -163,17 +263,161 @@ public class WebCrawlerService {
 
 			this.setDownloadPath(downloadPath);
 			this.homeAddress = getHomeAddress(baseUrl);
-			
 			inputData = (InputData) context
 						.getBean("inputData", new Object[]{criteriaNo,downloadPath,baseUrl,homeAddress});
+			isRecoveryRequired = isRecoveryRequired(inputData);
+			
 			manager = (ThreadManager) context
 					  .getBean("manager", new Object[]{inputData});
+			
+			if(isRecoveryRequired){
+				if(manager != null && manager.getUrlProcessorManager() != null){
+					populateDataForRecovery(manager.getUrlProcessorManager().getUrlProcessorData());
+				}
+			}
 			
 			if (criteriaNo == 1) {
 				filterCriteriaObj = new FilterCriteria();
 				filterCriteriaObj.setForYear((String) arrayOfinputs[0]);
 			}
 		}
+	}
+	
+	private int populateDataForRecovery(URLProcessorData data){
+		Map<String, String> visitedURLMap = null;
+		Map<String, String> queueMap = null;
+		
+		BlockingQueue<String> urlsQueue = null;
+		
+		try {
+			if (data != null) {
+				urlsQueue = data.getUrlsQueue();
+				queueMap = getUrlsMap();
+				visitedURLMap = getVisitedURLMap();
+				if (queueMap != null && visitedURLMap != null) {
+					for(Map.Entry<String, String> entry : queueMap.entrySet()){
+						urlsQueue.put(entry.getValue());
+					}
+					data.setUrlsQueue(urlsQueue);
+					data.setSeenUrls(visitedURLMap);
+				}
+			}
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		return 1;
+	}
+	
+	private Map<String, String> getVisitedURLMap(){
+		Map<String, String> visitedURLMap = null;
+		BufferedReader reader = null;
+		String[] tokens = null;
+		String line = "";
+		reader = getFileReader("recovery.visited.url.queue.file");
+		if(reader != null){
+			visitedURLMap = new HashMap<String,String>();
+			try {
+				while ((line = reader.readLine()) != null) {
+					tokens = line.split(COMMA_DELIMITER);
+					for(String url : tokens){
+						visitedURLMap.put(url, url);
+					}
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}finally {
+				try {
+					if (reader != null) {
+						reader.close();
+					}
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		return visitedURLMap;
+	}
+	
+	private Map<String, String> getUrlsMap(){
+		Map<String, String> queueMap = null;
+		BufferedReader mainQueue = null;
+		BufferedReader removedUrls = null;
+		String[] tokens = null;
+		String line = "";
+		mainQueue = getFileReader("recovery.main.queue.file");
+		if(mainQueue != null){
+			queueMap = new HashMap<String,String>();
+			try {
+				while ((line = mainQueue.readLine()) != null) {
+					tokens = line.split(COMMA_DELIMITER);
+					for(String url : tokens){
+						queueMap.put(url, url);
+					}
+				}
+				removedUrls = getFileReader("recovery.removed.url.queue.file");
+				if(removedUrls != null){
+					while ((line = removedUrls.readLine()) != null) {
+						tokens = line.split(COMMA_DELIMITER);
+						for(String url : tokens){
+							queueMap.remove(url);
+						}
+					}
+				}
+				
+			} catch (IOException e) {
+				e.printStackTrace();
+			}finally {
+				try {
+					if (mainQueue != null) {
+						mainQueue.close();
+					}
+					if (removedUrls != null) {
+						removedUrls.close();
+					}
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		return queueMap;
+	}
+	
+	private BufferedReader getFileReader(String fileKey) {
+		BufferedReader fileReader = null;
+		Properties configFile;
+		String userCurrentDir = null;
+		InputStream inputStream;
+		String recoveryFileName;
+		String recoveryDirName;
+		StringBuilder temp = new StringBuilder();
+		File file = null;
+
+		inputStream = MainQueueAccess.class.getClassLoader()
+				.getResourceAsStream("application.properties");
+		try {
+			if (inputStream != null) {
+				configFile = new Properties();
+				configFile.load(inputStream);
+				
+				recoveryDirName = configFile.getProperty("recovery.dir");
+				recoveryFileName = configFile
+						.getProperty(fileKey);
+				
+				userCurrentDir = System.getProperty("user.dir");
+				temp = temp.append(userCurrentDir).append("/").append(recoveryDirName).append("/").append(recoveryFileName);
+				
+				file = new File(temp.toString());
+				if(file.exists()){
+					fileReader = new BufferedReader(new FileReader(temp.toString()));
+				}
+			}
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		return fileReader;
 	}
 
 	private String getHomeAddress(String baseUrl) {

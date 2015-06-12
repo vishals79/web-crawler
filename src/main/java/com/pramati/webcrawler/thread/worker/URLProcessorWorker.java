@@ -1,4 +1,4 @@
-package com.pramati.webcrawler.thread;
+package com.pramati.webcrawler.thread.worker;
 
 import java.io.IOException;
 import java.util.Map;
@@ -35,7 +35,11 @@ public class URLProcessorWorker implements Runnable{
 	
 	private InputData inputData;
 	private URLProcessorData urlProcessorData;
+	
 	private RecoveryData recoveryData;
+	private BlockingQueue<String> adddedURLQueue;
+	private BlockingQueue<String> removedURLQueue;
+	private BlockingQueue<String> visitedUrls;
 	
 	private static Log logger = LogFactory.getLog(URLProcessorWorker.class);
 	
@@ -60,6 +64,11 @@ public class URLProcessorWorker implements Runnable{
 			this.urlsQueue = urlProcessorData.getUrlsQueue();
 			this.seenUrls = urlProcessorData.getSeenUrls();
 		}
+		if(recoveryData != null){
+			this.adddedURLQueue = recoveryData.getAdddedURLQueue();
+			this.removedURLQueue = recoveryData.getRemovedURLQueue();
+			this.visitedUrls = recoveryData.getVisitedUrls();
+		}
 	}
 	
 	public void run() {
@@ -74,6 +83,7 @@ public class URLProcessorWorker implements Runnable{
 					url = fetchURL();
 					if(url != null){
 						processReqForUrl(url);
+						removedURLQueue.put(url);
 					}
 				}
 			}catch(InterruptedException e){
@@ -131,6 +141,7 @@ public class URLProcessorWorker implements Runnable{
 							if(!duplicateURL(href)){
 								addToUrlMap(href);
 								urlsQueue.put(href);
+								adddedURLQueue.put(href);
 							}
 						}
 					} else {
@@ -139,6 +150,7 @@ public class URLProcessorWorker implements Runnable{
 							if (!duplicateURL(addUrl)) {
 								addToUrlMap(addUrl);
 								urlsQueue.put(addUrl);
+								adddedURLQueue.put(addUrl);
 							}
 						}
 					}
@@ -147,11 +159,16 @@ public class URLProcessorWorker implements Runnable{
 		}
 	}
 	
-	private void addToUrlMap(String url){
-		if(isNotEmpty(url)){
+	private void addToUrlMap(String url) {
+		if (isNotEmpty(url)) {
 			synchronized (seenUrls) {
 				seenUrls.put(url, url);
 				seenUrls.notifyAll();
+			}
+			try {
+				visitedUrls.put(url);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
 			}
 		}
 	}

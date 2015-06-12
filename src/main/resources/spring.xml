@@ -26,23 +26,54 @@
 <bean id="urlProcessorData" class="com.pramati.webcrawler.common.URLProcessorData">
 </bean>
 
-<bean id="urlProcessorWorker" class="com.pramati.webcrawler.thread.URLProcessorWorker" scope="prototype">
+<bean id="urlProcessorWorker" class="com.pramati.webcrawler.thread.worker.URLProcessorWorker" scope="prototype">
 <property name="filter" ref="filter"></property>
 <property name="parser" ref="parser"></property>
-<property name="recoveryData" ref="recoveryData"></property>
 <property name="urlProcessorData" ref="urlProcessorData"></property>
 <property name="trigger" ref="trigger"></property>
+<property name="recoveryData" ref="recoveryData"></property>
 <constructor-arg index="0" value="" type="com.pramati.webcrawler.common.InputData"></constructor-arg>
 <constructor-arg index="1" value="" type="com.pramati.webcrawler.common.URLProcessorData"></constructor-arg>
 </bean>
 
-<bean id="urlProcessorManager" class="com.pramati.webcrawler.thread.URLProcessorManager" scope="prototype">
+<bean id="urlProcessorManager" class="com.pramati.webcrawler.thread.manager.URLProcessorManager" scope="prototype">
 <property name="trigger" ref="trigger"></property>
 <property name="urlProcessorData" ref="urlProcessorData"></property>
 </bean>
 
-<bean id="manager" class="com.pramati.webcrawler.thread.ThreadManager" scope="prototype">
+<bean id="manager" class="com.pramati.webcrawler.thread.manager.ThreadManager" scope="prototype">
 <property name="urlProcessorManager" ref="urlProcessorManager"></property>
+<property name="recoveryManager" ref="recoveryManager"></property>
 <constructor-arg index="0" value="" type="com.pramati.webcrawler.common.InputData"></constructor-arg>
+</bean>
+
+<bean id="recoveryManager" class="com.pramati.webcrawler.thread.manager.RecoveryManager" scope="prototype">
+</bean>
+
+<bean id="mainQueueAccess" class="com.pramati.webcrawler.recovery.MainQueueAccess">
+</bean>
+
+<bean id="removedURLAccess" class="com.pramati.webcrawler.recovery.RemovedURLAccess">
+</bean>
+
+<bean id="visitedURLAccess" class="com.pramati.webcrawler.recovery.VisitedURLAccess">
+</bean>
+
+<bean id="mainQueueRecoveryWorker" class="com.pramati.webcrawler.thread.worker.MainQueueRecoveryWorker" scope="prototype">
+<property name="trigger" ref="trigger"></property>
+<property name="mainQueueAccess" ref="mainQueueAccess"></property>
+<property name="recoveryData" ref="recoveryData"></property>
+</bean>
+
+<bean id="removedURLRecoveryWorker" class="com.pramati.webcrawler.thread.worker.RemovedURLRecoveryWorker" scope="prototype">
+<property name="trigger" ref="trigger"></property>
+<property name="removedURLAccess" ref="removedURLAccess"></property>
+<property name="recoveryData" ref="recoveryData"></property>
+</bean>
+
+<bean id="visitedURLRecoveryWorker" class="com.pramati.webcrawler.thread.worker.VisitedURLRecoveryWorker" scope="prototype">
+<property name="trigger" ref="trigger"></property>
+<property name="visitedURLAccess" ref="visitedURLAccess"></property>
+<property name="recoveryData" ref="recoveryData"></property>
 </bean>
 </beans>

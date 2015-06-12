@@ -24,6 +24,9 @@ public class DownloaderImpl implements Downloader {
                 }
 
                 file = new File(path + "email" + getEmailCount());
+                while(file.exists()){
+                	file = new File(path + "email" + getEmailCount());
+                }
                 if (!file.exists()) {
                     file.createNewFile();
                 }
