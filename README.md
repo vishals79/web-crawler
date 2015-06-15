@@ -7,6 +7,7 @@ A simple generic web crawler to download emails from a website.
 * A page is identified as an email on the basis of filter (A page should contain "From", "Date" and "Subject" for it to be considered as an email.)
 * Emails are downloaded in user provided path.
 * If a page is redirected to another domain or outside of parent location, that page is not picked up for crawling.
+* Program can survive internet connection loss and can resume from last run.
 
 
 ## How to crawl
@@ -23,6 +24,8 @@ A simple generic web crawler to download emails from a website.
 	## Input
 	* base.URL = URL to download emails.
 	* download.directory = Directory path to save emails.
+	* recovery.dir = Directory name to save backup files to recover from internet connection loss and resume from last run.
+	
 	
 	## Thread
 	* min.threads = minimum number of threads.
@@ -43,11 +46,23 @@ A simple generic web crawler to download emails from a website.
 
 ![alt text](https://github.com/vishals79/web-crawler/blob/master/etc/main-flow.jpg "Main Flow")
 
-### URLProcessor Flow
+### URLProcessor Manager Flow
 
-![alt text](https://github.com/vishals79/web-crawler/blob/master/etc/url-processor.jpg "URL Processor")
+![alt text](https://github.com/vishals79/web-crawler/blob/master/etc/url-processor-manager.jpg "URL Processor Manager")
+
+### URLProcessor Worker Flow
+
+![alt text](https://github.com/vishals79/web-crawler/blob/master/etc/url-processor-worker.jpg "URL Processor Worker")
 
 ### Invigilator Flow
 
 ![alt text](https://github.com/vishals79/web-crawler/blob/master/etc/invigilator.jpg "Invigilator")
+
+### Recovery Manager Flow
+
+![alt text](https://github.com/vishals79/web-crawler/blob/master/etc/recovery-manager.jpg "Recovery Manager")
+
+### Recovery Worker Flow
+
+![alt text](https://github.com/vishals79/web-crawler/blob/master/etc/recovery-worker.jpg "Recovery Worker")
 
